@@ -1,0 +1,14 @@
+{
+  "service_name": "loki_machine",
+  "service_description": "Nano kernel for embedded machines,",
+  "service_daemon": "/usr/bin/python",
+  "service_daemon_args": "machine.py",
+  "service_owner": "root",
+  "space_owner": "root",
+  "password": "qwe123",
+  "work_dir": "/opt/${NAME}",
+  "pidfile": "/opt/${NAME}",
+  "service_scriptname": "/opt/${NAME}",
+  "path": "/opt/${NAME}",
+  "log_path": "/opt/${NAME}"
+}
