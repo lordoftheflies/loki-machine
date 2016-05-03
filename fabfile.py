@@ -9,6 +9,10 @@ from fabric.api import settings
 
 
 class LsbService:
+    """
+    Class for encapsulating LSB linux boot script for any python script.
+    """
+
     def __init__(
             self,
             name,
@@ -38,6 +42,25 @@ class LsbService:
                 'service_scriptname',
                 'service_log_path']
     ):
+        """
+        LSB service constructor.
+        :param name: Service name.
+        :param description: Service description.
+        :param daemon: Daemon program (ie.: python).
+        :param daemon_args: Arguments of thy daemon (ie.: machiny.py).
+        :param user: System user for the application.
+        :param group: System group for the application.
+        :param password: Password for the system user.
+        :param work_dir: Working directory of the application.
+        :param pidfile: PID file location.
+        :param scriptname: Name of the boot service.
+        :param path: $PATH extensions dorectories.
+        :param log_path: Path of the log directory..
+        :param start_level: Start level of the LSB service.
+        :param stop_level: Stop level of the LSB service.
+        :param keys: Placeholder keys in the configuration file.
+        :return:
+        """
         self.config = {
             'service_name': name,
             'service_path': path,
@@ -54,6 +77,12 @@ class LsbService:
         self.keys = keys
 
     def generateLsbScript(self, templateLocation, output):
+        """
+        Generate LSB script bash file.
+        :param templateLocation: Location of the template.
+        :param output: Generated output location.
+        :return:
+        """
         local('cp ' + templateLocation + ' ' + output)
 
         s = open(output).read()
@@ -69,6 +98,13 @@ class LsbService:
 
 
 def generate_lsb_service(config_file, output_name, templat_dir='templates/start-stop-daemon-template'):
+    """
+    FABRIC task for generate LSB service for the application locally.
+    :param config_file: Name of the service configuration file.
+    :param output_name: Generated output location.
+    :param templat_dir: Location of the template.
+    :return:
+    """
     with open(config_file) as config:
         lsb_service_config = json.load(config)
         print (json.dumps(lsb_service_config))
@@ -85,6 +121,10 @@ def generate_lsb_service(config_file, output_name, templat_dir='templates/start-
 
 
 def deploy_scripts():
+    """
+    FABRIC task to deploy source to any endpoint.
+    :return:
+    """
     print("DEPLOY SCRIPTS ...")
     put("loki_common.py", "loki_common.py")
     put("loki_driver.py", "loki_driver.py")
@@ -94,10 +134,18 @@ def deploy_scripts():
 
 
 def install_linux_packages():
+    """
+    FABRIC task to install linux package dependecies remotely.
+    :return:
+    """
     sudo('apt-get install python-pip')
 
 
 def install_python_modules():
+    """
+    FABRIC task to install python module dependencies remotely.
+    :return:
+    """
     sudo('pip install pika')
     sudo('pip install websocket-client')
     sudo('pip install pyusb==1.0.0b2')
@@ -105,6 +153,14 @@ def install_python_modules():
 
 
 def change_hostname(original, new, user, group):
+    """
+    FABRIC task to change hostname of any endpoint remotely.
+    :param original: Original hostname.
+    :param new: New hostname.
+    :param user: Execute in the name of this user.
+    :param group: Execute in the name of this group.
+    :return:
+    """
     print("TRYING CHANGE HOSTNAME FROM " + original + " TO " + new + " ...")
 
     if original == new:
@@ -136,6 +192,16 @@ def change_hostname(original, new, user, group):
 
 
 def create_space(user, group, application, password):
+    """
+    FABRIC task to create application space.
+    - New user and group for the application.
+    - Create installation directory.
+    :param user: Execute in the name of this user.
+    :param group: Execute in the name of this group.
+    :param application: Name of the application.
+    :param password: Password for the user.
+    :return:
+    """
     print ("CREATE SPACE FOR APPLICATION")
 
     with settings(warn_only=True):
@@ -163,6 +229,13 @@ def create_space(user, group, application, password):
 
 
 def install_service(scriptfile, start_level="90", stop_level="10"):
+    """
+    FABRIC task to install LSB service remotely.
+    :param scriptfile: Name of the local and remote scriptfile.
+    :param start_level: Service starting level
+    :param stop_level: Service stopping level
+    :return:
+    """
     print ("INSTALL LSB SERVICE " + scriptfile + " FOR APPLICATION ")
     run('mkdir -p ~/tmp')
     put(scriptfile, '~/tmp/' + scriptfile)
@@ -180,17 +253,29 @@ def install_service(scriptfile, start_level="90", stop_level="10"):
 
 
 def reboot_machine():
+    """
+    FABRIC task to reboot machine remotely.
+    :return:
+    """
     with settings(warn_only=True):
         reboot()
 
 
 def clean_install():
+    """
+    FABRIC task to initialize system to endpoint. Create application space, install linux and python dependecies.
+    :return:
+    """
     create_space('loki', 'cherubits', 'loki_machine', 'qwe123')
     install_linux_packages()
     install_python_modules()
 
 
 def init_system():
+    """
+    FABRIC task to install system. Create LSB service, deploy source, reboot ednpoint.
+    :return:
+    """
     deploy_scripts()
     install_service('loki_machine', 'loki')
     reboot_machine()
